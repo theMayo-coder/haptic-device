@@ -45,7 +45,7 @@ class morseCalculator:public Calculator {
       forceDamping = fd;
       distanceScale = ds;
     }
-    vector<vector<double>> getFandU(vector<Atom*>& atoms);
+    std::vector<std::vector<double>> getFandU(std::vector<Atom*>& atoms);
     double getMorseEnergy(double distance);
     double getMorseForce(double distance);
 };
@@ -61,7 +61,7 @@ class ljCalculator:public Calculator {
       epsilon = e;
       distanceScale = ds;
     }
-    vector<vector<double>> getFandU(vector<Atom*>& atoms);
+    std::vector<std::vector<double>> getFandU(std::vector<Atom*>& atoms);
     double getLennardJonesEnergy(double distance);
     double getLennardJonesForce(double distance);
 };

@@ -53,7 +53,7 @@ const int REPEAT_Z = 1;
 
 bool showDebug = false; // Toggles the extra debug overlay information when true.
 chai3d::cVector3d hapticForce; // The force applied to the haptic device
-std::vector<cLabel *> debugAtomLabels; // Stores the labels that annotate atoms with their indices.
+std::vector<chai3d::cLabel *> debugAtomLabels; // Stores the labels that annotate atoms with their indices.
 
 // Declare variables needed for calculator constructor (cell, pbc), atoms object
 // (mass, atomic number), and placing of initial atoms (positions)
@@ -61,7 +61,7 @@ std::array<double, 9> aseCell = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 std::array<int, 3> asePbc = {0, 0, 0};
 
 // Stores the initial atom positions so the structure can be reset.
-std::vector<cVector3d> initialPositions;
+std::vector<chai3d::cVector3d> initialPositions;
 
 // Radius of an atom in world units. 
 // Based on the covalent radius of hydrogen, .37 Å
@@ -128,9 +128,9 @@ std::vector<Atom *> atoms;
 // lines drawn between bonded atom pairs, keyed by sorted (atom index) pairs.
 // Lines are created lazily and hidden (not removed) when a pair un-bonds so
 // they can be cheaply re-shown if the pair drifts back within range.
-std::map<pair<int, int>, chai3d::cShapeLine *> bondLines;
+std::map<std::pair<int, int>, chai3d::cShapeLine *> bondLines;
 
-std::vector<cLabel *> debugLabels; // Stores the labels that show debug values in the scene.
+std::vector<chai3d::cLabel*> debugLabels; // Stores the labels that show debug values in the scene.
 
 chai3d::cLabel *hapticPositionLabel;
 chai3d::cLabel *labelRates; // a label to display the rate [Hz] at which the simulation is running
@@ -193,8 +193,8 @@ std::recursive_mutex sceneMutex;
 std::atomic<bool> hapticsThreadStarted(false);
 std::atomic<bool> physicsThreadStarted(false);
 int currentIndex = 0;
-std::vector<cLabel *> hotkeyKeys; // vector holding hotkey key labels
-std::vector<cLabel *> hotkeyFunctions; // vector holding function key labels (must be separate for formatting)
+std::vector<chai3d::cLabel *> hotkeyKeys; // vector holding hotkey key labels
+std::vector<chai3d::cLabel *> hotkeyFunctions; // vector holding function key labels (must be separate for formatting)
 
 // screenshot notification label
 chai3d::cLabel *screenshotLabel;
@@ -210,13 +210,13 @@ chai3d::cVector3d extraForces; // Miscellaneous forces; reset when applied
  * @brief Prints the startup banner.
  */
 void printIntro() {
-  cout << endl;
-  cout << "-----------------------------------" << endl;
-  cout << "CHAI3D" << endl;
-  cout << "Press CTRL for help" << endl;
-  cout << "-----------------------------------" << endl
-       << endl
-       << endl;
+  std::cout << std::endl;
+  std::cout << "-----------------------------------" << std::endl;
+  std::cout << "CHAI3D" << std::endl;
+  std::cout << "Press CTRL for help" << std::endl;
+  std::cout << "-----------------------------------" << std::endl
+       << std::endl
+       << std::endl;
 }
 
 /**
@@ -225,7 +225,7 @@ void printIntro() {
  * @param description A UTF-8 encoded string describing the error
  */
 void errorCallback(int a_error, const char *a_description) {
-  cout << "Error: " << a_description << endl;
+  std::cout << "Error: " << a_description << std::endl;
 }
 
 /**
@@ -250,7 +250,7 @@ void configureGLFW(const chai3d::cStereoMode STEREO_MODE) {
   glfwSetErrorCallback(errorCallback); // set error callback
   setOpenGLVersion(2, 1);
   // set active stereo mode
-  STEREO_MODE == C_STEREO_ACTIVE 
+  STEREO_MODE == chai3d::C_STEREO_ACTIVE 
       ? glfwWindowHint(GLFW_STEREO, GL_TRUE) 
       : glfwWindowHint(GLFW_STEREO, GL_FALSE);
 }
@@ -321,8 +321,8 @@ void ensureGLEW() {
  * @brief Initializes world that hosts the simulation.
  * @return the CHAI3D world object
  */
-cWorld* initializeWorld() {
-  cWorld *world = new cWorld();
+chai3d::cWorld* initializeWorld() {
+  chai3d::cWorld *world = new chai3d::cWorld();
   world->m_backgroundColor.setWhite();
   world->setShadowIntensity(0.3); // set shadow factor
   return world;
@@ -342,7 +342,7 @@ void close() { // stop the simulation
     if (hapticsThreadStarted.load()) {
       // wait for graphics and haptics loops to terminate
       while (!simulationFinished) {
-        cSleepMs(100);
+        chai3d::cSleepMs(100);
       }
     }
     if (calculatorPtr != nullptr) {
@@ -357,14 +357,14 @@ void close() { // stop the simulation
  * @param world the CHAI3D world object the camera will be added to
  * @param STEREO_MODE the stereo mode the camera should be in
  */
-void initializeCamera(cWorld* world, const chai3d::cStereoMode STEREO_MODE) {
+void initializeCamera(chai3d::cWorld* world, const chai3d::cStereoMode STEREO_MODE) {
   camera = new chai3d::cCamera(world);
   world->addChild(camera);
 
   // creates the radius, origin reference, along with the zenith and azimuth direction vectors
-  cVector3d origin(0.0, 0.0, 0.0);
-  cVector3d zenith(0.0, 0.0, 1.0);
-  cVector3d azimuth(1.0, 0.0, 0.0);
+  chai3d::cVector3d origin(0.0, 0.0, 0.0);
+  chai3d::cVector3d zenith(0.0, 0.0, 1.0);
+  chai3d::cVector3d azimuth(1.0, 0.0, 0.0);
 
   // sets the camera's references of the origin, zenith, and azimuth
   camera->setSphericalReferences(origin, zenith, azimuth);
@@ -383,8 +383,8 @@ void initializeCamera(cWorld* world, const chai3d::cStereoMode STEREO_MODE) {
   camera->setMirrorVertical(false); // set vertical mirrored display mode
 
   
-  cBackground *background; // a colored background
-  background = new cBackground(); // create a background
+  chai3d::cBackground *background; // a colored background
+  background = new chai3d::cBackground(); // create a background
   camera->m_backLayer->addChild(background);
 
   // set aspect ration of background image a constant
@@ -405,8 +405,8 @@ void initializeCamera(cWorld* world, const chai3d::cStereoMode STEREO_MODE) {
  * @brief Creates the light source that illuminates the scene.
  * @param world the CHAI3D world object to add the light to
  */
-void initializeLight(cWorld* world) {
-  cSpotLight *light = new cSpotLight(world); // create a light source
+void initializeLight(chai3d::cWorld* world) {
+  chai3d::cSpotLight *light = new chai3d::cSpotLight(world); // create a light source
   light->setEnabled(true); // enable light source
   light->setLocalPos(0.0, 0.3, 0.4); // position the light source
   light->setDir(0.0, -0.25, -0.4); // define the direction of the light beam
@@ -420,8 +420,8 @@ void initializeLight(cWorld* world) {
  * @brief Connects to, or prepares, the available haptic device.
  */
 void initializeHapticDevice() {
-  cHapticDeviceHandler *handler;
-  handler = new cHapticDeviceHandler(); // create a haptic device handler
+  chai3d::cHapticDeviceHandler *handler;
+  handler = new chai3d::cHapticDeviceHandler(); // create a haptic device handler
   // get access to the first available haptic device
   double hapticDeviceMaxStiffness;   // highest stiffness the current haptic device can render
   if (handler->getNumDevices() > 0) {
@@ -436,7 +436,7 @@ void initializeHapticDevice() {
   } else {
     const double HAPTIC_STIFFNESS = 1000.0;
     hapticDeviceMaxStiffness = HAPTIC_STIFFNESS;
-    cout << "No haptic device detected. Running in keyboard/mouse-only mode." << endl;
+    std::cout << "No haptic device detected. Running in keyboard/mouse-only mode." << std::endl;
   }
 }
 
@@ -444,11 +444,11 @@ void initializeHapticDevice() {
  * @brief Adds labels that annotate each atom with its index.
  */
 void initializeAtomLabels() {
-  cFontPtr atomLabelFont = NEW_CFONT_CALIBRI_20();
+  chai3d::cFontPtr atomLabelFont = chai3d::NEW_CFONT_CALIBRI_20();
   for (int i = 0; i < atoms.size(); i++) {
-    cLabel *label = new cLabel(atomLabelFont);
+    chai3d::cLabel *label = new chai3d::cLabel(atomLabelFont);
     label->m_fontColor.setBlack();
-    label->setText(to_string(i));
+    label->setText(std::to_string(i));
     label->setShowEnabled(false);
     camera->m_frontLayer->addChild(label);
     debugAtomLabels.push_back(label);
@@ -463,8 +463,9 @@ void initializeAtomLabels() {
  * @param z z-val of the vector
  * @param radius length to scale the vector to in world units
  */
-static void addScaledVertex(vector<cVector3d> &positions, double x, double y, double z, double radius) {
-  positions.push_back(scaledToRadius(cVector3d(x, y, z), radius));
+static void addScaledVertex(std::vector<chai3d::cVector3d> &positions, 
+    double x, double y, double z, double radius) {
+  positions.push_back(scaledToRadius(chai3d::cVector3d(x, y, z), radius));
 }
 
 /**
@@ -473,8 +474,8 @@ static void addScaledVertex(vector<cVector3d> &positions, double x, double y, do
  * @param radius the radius of the polyhedron in world units
  * @return a vector of positions that form the polyhedron
  */
-vector<cVector3d> polyhedronCords(int k, double radius) {
-  vector<cVector3d> positions;
+std::vector<chai3d::cVector3d> polyhedronCords(int k, double radius) {
+  std::vector<chai3d::cVector3d> positions;
   positions.reserve(k);
   const double phi = (1.0 + sqrt(5.0)) / 2.0;
   const double invPhi = 1.0 / phi;
@@ -549,15 +550,15 @@ vector<cVector3d> polyhedronCords(int k, double radius) {
  * @param radius the radius of the shell in world units
  * @return a vector of positions that form the Fibonacci-sphere shell
  */
-vector<cVector3d> fibonacciCords(int k, double radius) {
-  vector<cVector3d> positions;
+std::vector<chai3d::cVector3d> fibonacciCords(int k, double radius) {
+  std::vector<chai3d::cVector3d> positions;
   positions.reserve(k);
 
   if (k <= 0) {
     return positions;
   }
   if (k == 1) {
-    positions.push_back(cVector3d(0.0, 0.0, radius));
+    positions.push_back(chai3d::cVector3d(0.0, 0.0, radius));
     return positions;
   }
 
@@ -568,7 +569,7 @@ vector<cVector3d> fibonacciCords(int k, double radius) {
     double r = sqrt(1.0 - y * y);
     double theta = goldenAngle * i;
 
-    positions.push_back(cVector3d(
+    positions.push_back(chai3d::cVector3d(
       radius*cos(theta)*r,
       radius*y,
       radius*sin(theta)*r
@@ -584,8 +585,8 @@ vector<cVector3d> fibonacciCords(int k, double radius) {
  * @param radius the radius of the shell in world units
  * @return a vector of positions that form the Thomson problem solution
  */
-vector<cVector3d> thomsonCords(int k, double radius) {
-  vector<cVector3d> positions = fibonacciCords(k, radius);
+std::vector<chai3d::cVector3d> thomsonCords(int k, double radius) {
+  std::vector<chai3d::cVector3d> positions = fibonacciCords(k, radius);
   if (k <= 1) {
     return positions;
   }
@@ -594,17 +595,17 @@ vector<cVector3d> thomsonCords(int k, double radius) {
   const double baseStep = radius * 0.04;
 
   for (int iter = 0; iter < iterations; iter++) {
-    vector<cVector3d> forces(k, cVector3d(0.0, 0.0, 0.0));
+    std::vector<chai3d::cVector3d> forces(k, chai3d::cVector3d(0.0, 0.0, 0.0));
 
     for (int i = 0; i < k; i++) {
       for (int j = i + 1; j < k; j++) {
-        cVector3d diff = positions[i] - positions[j];
+        chai3d::cVector3d diff = positions[i] - positions[j];
         double dist = diff.length();
         if (dist <= 1e-9) {
           continue;
         }
 
-        cVector3d force = diff * (1.0 / (dist * dist * dist));
+        chai3d::cVector3d force = diff * (1.0 / (dist * dist * dist));
         forces[i] += force;
         forces[j] -= force;
       }
@@ -612,11 +613,11 @@ vector<cVector3d> thomsonCords(int k, double radius) {
 
     double step = baseStep * (1.0 - (0.75 * iter / iterations));
     for (int i = 0; i < k; i++) {
-      cVector3d normal = scaledToRadius(positions[i], 1.0);
+      chai3d::cVector3d normal = scaledToRadius(positions[i], 1.0);
       double radialForce = forces[i].x() * normal.x()
                          + forces[i].y() * normal.y()
                          + forces[i].z() * normal.z();
-      cVector3d tangentForce = forces[i] - normal * radialForce;
+      chai3d::cVector3d tangentForce = forces[i] - normal * radialForce;
       positions[i] = scaledToRadius(positions[i] + tangentForce * step, radius);
     }
   }
@@ -630,9 +631,9 @@ vector<cVector3d> thomsonCords(int k, double radius) {
  * @param radius the radius of the shell in Angstroms
  * @return a vector of positions that form the shell
  */
-vector<cVector3d> generateShellPositions(int k, double radiusAngstroms) {
+std::vector<chai3d::cVector3d> generateShellPositions(int k, double radiusAngstroms) {
   if (k <= 0) {
-    return vector<cVector3d>();
+    return std::vector<chai3d::cVector3d>();
   }
   const double radius = radiusAngstroms * DIST_SCALE;
   if ((k == 4) || (k == 6) || (k == 8) || (k == 12) || (k == 20)) {
@@ -652,7 +653,7 @@ vector<cVector3d> generateShellPositions(int k, double radiusAngstroms) {
  * @param radius the radius of the atom
  * @return a pointer to the initialized atom
  */
-Atom* initializeAtom(cWorld* world, cTexture2dPtr texture, int atomicNumber, double radius = SPHERE_RADIUS) {
+Atom* initializeAtom(chai3d::cWorld* world, chai3d::cTexture2dPtr texture, int atomicNumber, double radius = SPHERE_RADIUS) {
   Atom *new_atom = new Atom(radius, atomicNumber, world, texture); // create a atom and define its radius
   new_atom->setPeriodics(repeatX, repeatY, repeatZ);
   // set graphic properties of atom
@@ -671,7 +672,7 @@ Atom* initializeAtom(cWorld* world, cTexture2dPtr texture, int atomicNumber, dou
  * @param argv array of characters that make up the arguments
  */
 void placeAtomsAse(chai3d::cWorld* world, std::array<double, 9>& aseCell,
-    std::array<int, 3>& asePbc, cTexture2dPtr texture, int argc, char *argv[]) {
+    std::array<int, 3>& asePbc, chai3d::cTexture2dPtr texture, int argc, char *argv[]) {
   AseStructureData structure;
   // Optional repeat factors: argv[6]=x, argv[7]=y, argv[8]=z. Each defaults to
   // 1 if not given, and values < 1 are ignored (they would zero out the cell).
@@ -718,7 +719,7 @@ void placeAtomsAse(chai3d::cWorld* world, std::array<double, 9>& aseCell,
         chai3d::cVector3d atomPos(positions[i][0], positions[i][1], positions[i][2]);
         // scale coordinates and insert
         if (hapticMode == HapticMode::Standby) {
-          chai3d::cVector3d STANDBY_OFFSET(cVector3d(0.1, 0.1, 0.1));
+          chai3d::cVector3d STANDBY_OFFSET(chai3d::cVector3d(0.1, 0.1, 0.1));
           atomPos += STANDBY_OFFSET;
         }
         newAtom->setLocalPos(DIST_SCALE * (atomPos - centerPos));
@@ -736,7 +737,7 @@ void placeAtomsAse(chai3d::cWorld* world, std::array<double, 9>& aseCell,
  * @param argv array of characters that make up the arguments
  */
 void placeAtoms(chai3d::cWorld* world, std::array<double, 9>& aseCell, std::array<int, 3>& asePbc, int argc, char *argv[]) {
-  cTexture2dPtr texture = cTexture2d::create(); // create texture
+  chai3d::cTexture2dPtr texture = chai3d::cTexture2d::create(); // create texture
   // load texture file
   bool fileload = loadChaiResource([&](const char *path)
       { return texture->loadFromFile(path); },
@@ -757,7 +758,7 @@ void placeAtoms(chai3d::cWorld* world, std::array<double, 9>& aseCell, std::arra
     // argv[4]/argv[5] are always the ASE spec and PBC mode (see main()), never
     // a radius, so there is no CLI slot to override this default.
     const double shellRadiusAngstroms = 5.0;
-    vector<cVector3d> positions = generateShellPositions(k, shellRadiusAngstroms);
+    std::vector<chai3d::cVector3d> positions = generateShellPositions(k, shellRadiusAngstroms);
     for (int i = 0; i < numSpheres; i++) {
       // initialize atom with texture and atomic number of 1 (hydrogen)
       Atom *new_atom = initializeAtom(world, texture, 1, SPHERE_RADIUS); 
@@ -790,7 +791,7 @@ void initializeCalculator(int argc, char *argv[], std::array<double, 9> aseCell,
       calculatorPtr = new ljCalculator();
       return;
     }
-    string potential = argv[3];
+    std::string potential = argv[3];
     for (char &c : potential) {
       c = tolower(c);
     }
@@ -803,8 +804,8 @@ void initializeCalculator(int argc, char *argv[], std::array<double, 9> aseCell,
     } else if (potential == "lennard-jones" || potential == "lj") {
       calculatorPtr = new ljCalculator();
     } else {
-      cerr << "Warning: unknown potential '" << potential
-           << "'. Defaulting to Lennard-Jones." << endl;
+      std::cerr << "Warning: unknown potential '" << potential
+           << "'. Defaulting to Lennard-Jones." << std::endl;
       energySurface = LENNARD_JONES;
       calculatorPtr = new ljCalculator();
     }
@@ -816,7 +817,7 @@ void initializeCalculator(int argc, char *argv[], std::array<double, 9> aseCell,
 void initializePotentialLabel() {
   // set energy surface label
   potentialLabel->setLocalPos(0, 0);
-  string potentialName;
+  std::string potentialName;
   switch (energySurface) {
     case LENNARD_JONES:
       potentialName = "Lennard Jones Potential";
@@ -842,7 +843,7 @@ void initializeLabels() {
   addLabel(LJ_num); // potential energy label
   addLabel(num_anchored); // number anchored label
   
-  cLabel *total_energy; // a label to display the total energy of the system
+  chai3d::cLabel *total_energy; // a label to display the total energy of the system
   addLabel(total_energy); // total energy label
   addLabel(isFrozen); // frozen state label
   addLabel(camera_pos); // camera position label
@@ -858,10 +859,10 @@ void initializeLabels() {
 
   hapticPositionLabel->setLocalPos(0, 50);
 
-  cFontPtr notificationFont = NEW_CFONT_CALIBRI_20();
-  writeConLabel = new cLabel(notificationFont);
+  chai3d::cFontPtr notificationFont = chai3d::NEW_CFONT_CALIBRI_20();
+  writeConLabel = new chai3d::cLabel(notificationFont);
   writeConLabel->m_fontColor.setBlack();
-  screenshotLabel = new cLabel(notificationFont);
+  screenshotLabel = new chai3d::cLabel(notificationFont);
   screenshotLabel->m_fontColor.setBlack();
   camera->m_frontLayer->addChild(writeConLabel);
   camera->m_frontLayer->addChild(screenshotLabel);
@@ -911,7 +912,7 @@ void initializeHotkeyLabels() {
  */
 void initializePotentialEnergyPlot() {
   // create a scope to plot potential energy
-  scope = new cScope();
+  scope = new chai3d::cScope();
   scope->setLocalPos(0, 60);
   camera->m_frontLayer->addChild(scope);
   scope->setSignalEnabled(true, true, false, false);
@@ -935,12 +936,12 @@ void initializePotentialEnergyPlot() {
     global_min_known = false;
   }
   scope->setRange(lower_bound, upper_bound);
-  scope_upper->setText(cStr(upper_bound));
-  scope_lower->setText(cStr(lower_bound));
+  scope_upper->setText(chai3d::cStr(upper_bound));
+  scope_lower->setText(chai3d::cStr(lower_bound));
 
   // Height was guessed and added manually - there's probably a better way
   // To do this but the scope height is protected
-  scope_upper->setLocalPos(cAdd(scope->getLocalPos(), cVector3d(0, 180, 0)));
+  scope_upper->setLocalPos(chai3d::cAdd(scope->getLocalPos(), chai3d::cVector3d(0, 180, 0)));
   scope_lower->setLocalPos(scope->getLocalPos());
   // TODO - make more legible
   // scope_upper->m_fontColor.setRed();
@@ -951,10 +952,10 @@ void initializePotentialEnergyPlot() {
  * @brief Builds the help panel overlay that lists the hotkeys.
  */
 void initializeHelpPanel() {
-  cColorf panelColor = cColorf();
+  chai3d::cColorf panelColor = chai3d::cColorf();
   panelColor.setBlueCadet();
 
-  helpPanel = new cPanel();
+  helpPanel = new chai3d::cPanel();
   helpPanel->setColor(panelColor);
   helpPanel->setSize(520, 600);
   camera->m_frontLayer->addChild(helpPanel);
@@ -962,8 +963,8 @@ void initializeHelpPanel() {
 
   initializeHotkeyLabels();
 
-  cFontPtr headerFont = NEW_CFONT_CALIBRI_40();
-  helpHeader = new cLabel(headerFont);
+  chai3d::cFontPtr headerFont = chai3d::NEW_CFONT_CALIBRI_40();
+  helpHeader = new chai3d::cLabel(headerFont);
   helpHeader->m_fontColor.setBlack();
   helpHeader->setText("HOTKEYS AND INSTRUCTIONS");
   helpHeader->setShowPanel(false);
@@ -975,8 +976,8 @@ void initializeHelpPanel() {
  * @brief Retrieves a vector of selected atoms
  * @return a vector of selected atoms
  */
-vector<Atom*> getSelectedAtoms() {
-  vector<Atom*> selected;
+std::vector<Atom*> getSelectedAtoms() {
+  std::vector<Atom*> selected;
   for (Atom* atom : atoms) {
     if (atom->isSelected()) {
       selected.push_back(atom);
@@ -990,7 +991,6 @@ vector<Atom*> getSelectedAtoms() {
 }
 
 // Shared RNG for the Langevin thermostat's random force. Physics-thread-only
-// (stepSim runs on a single dedicated thread), so no locking is needed.
 std::mt19937 thermostatRng(std::random_device{}());
 std::normal_distribution<double> thermostatGaussian(0.0, 1.0);
 
@@ -1004,13 +1004,13 @@ std::normal_distribution<double> thermostatGaussian(0.0, 1.0);
  * @param dT the simulation time step, in ASE time units
  * @return the friction + random force to add to the atom's conservative force
  */
-cVector3d langevinThermostatForce(Atom *atom, double targetTemperature, double dT) {
+chai3d::cVector3d langevinThermostatForce(Atom *atom, double targetTemperature, double dT) {
   const double mass = atom->getMass();
-  cVector3d frictionForce = atom->getVelocity() / DIST_SCALE * (-LANGEVIN_FRICTION * mass);
+  chai3d::cVector3d frictionForce = atom->getVelocity() / DIST_SCALE * (-LANGEVIN_FRICTION * mass);
 
   const double sigma = std::sqrt(2.0 * LANGEVIN_FRICTION * mass * K_BOLTZMANN_EV *
                                   targetTemperature / dT);
-  cVector3d randomForce(thermostatGaussian(thermostatRng), thermostatGaussian(thermostatRng),
+  chai3d::cVector3d randomForce(thermostatGaussian(thermostatRng), thermostatGaussian(thermostatRng),
                         thermostatGaussian(thermostatRng));
 
   return frictionForce + randomForce * sigma;
@@ -1023,14 +1023,14 @@ cVector3d langevinThermostatForce(Atom *atom, double targetTemperature, double d
  * @param dT how big the time step is, in ASE time units
  * @return the new position of the atom
  */
-cVector3d getNewAtomPosition(Atom *atom, const double dT) {
-  cVector3d x0 = atom->getLatestPos();
-  cVector3d a1 = atom->getForce() / atom->getMass() * DIST_SCALE;
-  cVector3d a0 = atom->getPrevForce() / atom->getMass() * DIST_SCALE;
+chai3d::cVector3d getNewAtomPosition(Atom *atom, const double dT) {
+  chai3d::cVector3d x0 = atom->getLatestPos();
+  chai3d::cVector3d a1 = atom->getForce() / atom->getMass() * DIST_SCALE;
+  chai3d::cVector3d a0 = atom->getPrevForce() / atom->getMass() * DIST_SCALE;
 
   atom->setVelocity(atom->getVelocity() + .5 * (a0 + a1) * dT);
 
-  cVector3d v0 = atom->getVelocity();
+  chai3d::cVector3d v0 = atom->getVelocity();
 
   // force is in eV/Å and getMass() must be amu (see note below). ASE integrates
   // in Å, giving an Å displacement of (F/m)*dt². We render in world units where
@@ -1038,14 +1038,14 @@ cVector3d getNewAtomPosition(Atom *atom, const double dT) {
   return x0 + v0 * dT + .5 * a1 * dT * dT;
 }
 
-vector<int> activeHapticSelection;
+std::vector<int> activeHapticSelection;
 
 bool prevHapticInitialized;
 std::unordered_map<Atom*, chai3d::cVector3d> selectedOffsets;
 
 
-void ensureSelectionOffsets(const vector<Atom*> &selectedAtoms, const cVector3d &position) {
-  static vector<Atom*> prevSelectedAtoms;
+void ensureSelectionOffsets(const std::vector<Atom*> &selectedAtoms, const chai3d::cVector3d &position) {
+  static std::vector<Atom*> prevSelectedAtoms;
   if (selectedAtoms != prevSelectedAtoms) {
     for (Atom* atom : selectedAtoms) {
       selectedOffsets[atom] = atom->getLatestPos() - position;
@@ -1059,8 +1059,8 @@ void ensureSelectionOffsets(const vector<Atom*> &selectedAtoms, const cVector3d 
  * @param indices a vector of the indices of selected atoms
  * @return the average force of the selected group of atoms
  */
-cVector3d getAverageAtomGroupForce(const vector<Atom*> &selected) {
-  cVector3d force(0, 0, 0);
+chai3d::cVector3d getAverageAtomGroupForce(const std::vector<Atom*> &selected) {
+  chai3d::cVector3d force(0, 0, 0);
   if (selected.empty()) {
     return force;
   }
@@ -1094,7 +1094,7 @@ void readButtons(bool buttons[4], bool buttonReset[4]) {
             switchCamera();
             break;
           default:
-            cout << "Button " << i << " has not yet been defined!" << endl;
+            std::cout << "Button " << i << " has not yet been defined!" << std::endl;
             break;
         }
         buttonReset[i] = false;
@@ -1131,7 +1131,7 @@ void updateHaptics() {
       
       freqCounterHaptics.signal(1); // signal frequency counter
       
-      cVector3d position; 
+      chai3d::cVector3d position; 
       hapticDevice->getPosition(position); // read position
 
       // Scale position to use more of the screen; increase to use more of the screen
@@ -1162,10 +1162,10 @@ void updateHaptics() {
  * @brief Starts the background haptics thread used for simulation updates.
  */
 void initializeHapticThread() {
-  cThread *hapticsThread = nullptr; // create a thread which starts the main haptics rendering loop
+  chai3d::cThread *hapticsThread = nullptr; // create a thread which starts the main haptics rendering loop
   if (hapticDevice) {
-    hapticsThread = new cThread();
-    hapticsThread->start(updateHaptics, CTHREAD_PRIORITY_HAPTICS);
+    hapticsThread = new chai3d::cThread();
+    hapticsThread->start(updateHaptics, chai3d::CTHREAD_PRIORITY_HAPTICS);
     hapticsThreadStarted.store(true);
   }
 }
@@ -1178,14 +1178,14 @@ void initializeHapticThread() {
  */
 chai3d::cVector3d applyBoundaryConditions(chai3d::cVector3d pos, std::array<double, 9>& aseCell,
     std::array<int, 3>& asePbc) {
-  cVector3d initialCoords(centerCoords[0], centerCoords[1], centerCoords[2]);
+  chai3d::cVector3d initialCoords(centerCoords[0], centerCoords[1], centerCoords[2]);
   pos = pos / DIST_SCALE + initialCoords;
   
 chai3d::cMatrix3d cell(aseCell[0], aseCell[3], aseCell[6],
                        aseCell[1], aseCell[4], aseCell[7],
                        aseCell[2], aseCell[5], aseCell[8]);
   cell.invert();
-  cVector3d fracCoords = cell * pos;
+  chai3d::cVector3d fracCoords = cell * pos;
   if (asePbc[0]) {
     fracCoords.x(fracCoords.x() - std::floor(fracCoords.x()));
   }
@@ -1206,25 +1206,25 @@ chai3d::cMatrix3d cell(aseCell[0], aseCell[3], aseCell[6],
  * @param timeInterval timestep of the simulation in ASE units
  * @return the force the haptic device should render
  */
-cVector3d forceModeUpdateSelectedGroup(const vector<Atom*> &selected, cVector3d position,
+chai3d::cVector3d forceModeUpdateSelectedGroup(const std::vector<Atom*> &selected, chai3d::cVector3d position,
     const double timeInterval) {
   if (selected.empty()) {
-    return cVector3d(0, 0, 0);
+    return chai3d::cVector3d(0, 0, 0);
   }
   ensureSelectionOffsets(selected, position);
 
-  cVector3d averageSimulationForce = getAverageAtomGroupForce(selected);
+  chai3d::cVector3d averageSimulationForce = getAverageAtomGroupForce(selected);
 
   for (Atom *atom : selected) {
     if (!atom->isAnchor()) {
-      cVector3d currentPosition = atom->getLatestPos();
-      cVector3d previousPosition = atom->getPrevPos();
-      cVector3d targetPosition = position + selectedOffsets[atom];
-      cVector3d hapticForce = (targetPosition - currentPosition) * K_HAPTIC_SPRING -
+      chai3d::cVector3d currentPosition = atom->getLatestPos();
+      chai3d::cVector3d previousPosition = atom->getPrevPos();
+      chai3d::cVector3d targetPosition = position + selectedOffsets[atom];
+      chai3d::cVector3d hapticForce = (targetPosition - currentPosition) * K_HAPTIC_SPRING -
                               atom->getVelocity() * K_HAPTIC_DAMPER;
       const double MAX_HAPTIC_ATOM_FORCE = 100.0; 
       atom->setForce(atom->getForce() + clampVectorMagnitude(hapticForce, MAX_HAPTIC_ATOM_FORCE));
-      cVector3d newPosition = getNewAtomPosition(atom, timeInterval);
+      chai3d::cVector3d newPosition = getNewAtomPosition(atom, timeInterval);
       atom->addBufferedPos(applyBoundaryConditions(newPosition, aseCell, asePbc));
     }
     
@@ -1248,15 +1248,15 @@ std::unordered_map<Atom*, chai3d::cVector3d> posModeAttractions;
  * @return the force the haptic device should feel (currently, the haptic device will feel the
  *         average force of the selected atoms)
  */
-cVector3d positionModeUpdateSelectedGroup(const vector<Atom*> &selected, cVector3d position,
+chai3d::cVector3d positionModeUpdateSelectedGroup(const std::vector<Atom*> &selected, chai3d::cVector3d position,
     const double timeInterval) {
   const double VELOCITY_MULT = .01;
   for (Atom *atom : selected) {
-    cVector3d oldPosition = atom->getLatestPos();
-    cVector3d targetPosition = position + selectedOffsets[atom];
+    chai3d::cVector3d oldPosition = atom->getLatestPos();
+    chai3d::cVector3d targetPosition = position + selectedOffsets[atom];
     atom->setVelocity(atom->getVelocity() + targetPosition - oldPosition - posModeAttractions[atom]);
     posModeAttractions[atom] = targetPosition - oldPosition;
-    cVector3d newPosition(getNewAtomPosition(atom, timeInterval));
+    chai3d::cVector3d newPosition(getNewAtomPosition(atom, timeInterval));
     atom->addBufferedPos(applyBoundaryConditions(newPosition, aseCell, asePbc));
   }
   // Skylar note: this mode can sometimes have the classic feedback issue. The simulation can
@@ -1274,26 +1274,26 @@ cVector3d positionModeUpdateSelectedGroup(const vector<Atom*> &selected, cVector
  * @param hasHapticDevice true if there is a haptic device present; false, otherwise
  * @return the force to output to the haptic device
  */
-cVector3d stepSim(const cVector3d &requestedPosition, const double timeInterval,
+chai3d::cVector3d stepSim(const chai3d::cVector3d &requestedPosition, const double timeInterval,
                         const bool hasHapticDevice) {
   if (atoms.empty()) {
-    return cVector3d(0.0, 0.0, 0.0);
+    return chai3d::cVector3d(0.0, 0.0, 0.0);
   }
   Atom *current = atoms[currentIndex];
-  cVector3d position = hasHapticDevice ? requestedPosition : current->getLatestPos();
-  vector<Atom*> selectedAtoms = getSelectedAtoms();
+  chai3d::cVector3d position = hasHapticDevice ? requestedPosition : current->getLatestPos();
+  std::vector<Atom*> selectedAtoms = getSelectedAtoms();
 
-  cVector3d currentPosition(0,0,0);
-  cVector3d hapticForce(0, 0, 0);
+  chai3d::cVector3d currentPosition(0,0,0);
+  chai3d::cVector3d hapticForce(0, 0, 0);
   
   if (!freezeAtoms.load()) {
     if (!calculatorPtr) {
-      cerr << "Error: calculatorPtr is null in stepSim()" << endl;
-      return cVector3d(0.0, 0.0, 0.0);
+      std::cerr << "Error: calculatorPtr is null in stepSim()" << std::endl;
+      return chai3d::cVector3d(0.0, 0.0, 0.0);
     }
     const double targetTemperature = getSliderVal("Temperature", 0.0);
 
-    vector<vector<double>> forcesVec = calculatorPtr->getFandU(atoms);
+    std::vector<std::vector<double>> forcesVec = calculatorPtr->getFandU(atoms);
     double potentialEnergy = forcesVec[atoms.size()][0];
     if (std::isfinite(potentialEnergy)) {
       lastPotentialEnergy = potentialEnergy;
@@ -1301,7 +1301,7 @@ cVector3d stepSim(const cVector3d &requestedPosition, const double timeInterval,
 
     for (int i = 0; i < atoms.size(); i++) {
       Atom *atom = atoms[i];
-      cVector3d force(forcesVec[i][0], forcesVec[i][1], forcesVec[i][2]);
+      chai3d::cVector3d force(forcesVec[i][0], forcesVec[i][1], forcesVec[i][2]);
       if (!isFiniteVector(force)) {
         force.zero();
       }
@@ -1337,10 +1337,10 @@ cVector3d stepSim(const cVector3d &requestedPosition, const double timeInterval,
     int thermostattedDof = 0;
     for (Atom *atom : atoms) {
       if (!atom->isAnchor() && !atom->isSelected()) {
-        cVector3d new_position = getNewAtomPosition(atom, timeInterval);
+        chai3d::cVector3d new_position = getNewAtomPosition(atom, timeInterval);
         atom->addBufferedPos(applyBoundaryConditions(new_position, aseCell, asePbc));
         // Same world-unit-to-physical conversion as langevinThermostatForce.
-        cVector3d v = atom->getVelocity() / DIST_SCALE;
+        chai3d::cVector3d v = atom->getVelocity() / DIST_SCALE;
         kineticEnergy += 0.5 * atom->getMass() * v.dot(v);
         thermostattedDof += 3;
       }
@@ -1373,9 +1373,9 @@ void runPhysicsLoop() {
   while (simulationRunning) {
     if (!hapticDevice) {
       freqCounterHaptics.signal(1);
-      stepSim(cVector3d(0.0, 0.0, 0.0), simulationTimeStep.load() / ASE_UNITS_TO_FS, false);
+      stepSim(chai3d::cVector3d(0.0, 0.0, 0.0), simulationTimeStep.load() / ASE_UNITS_TO_FS, false);
     } else {
-      cVector3d hapticPosition;
+      chai3d::cVector3d hapticPosition;
       hapticDevice->getPosition(hapticPosition);
       hapticForce = stepSim(hapticPosition, simulationTimeStep.load() / ASE_UNITS_TO_FS, true);
     }
@@ -1388,9 +1388,9 @@ void runPhysicsLoop() {
  * @brief Initializes a separate thread to run the physics loop on
  */
 void initializePhysicsThread() {
-  cThread *physicsThread = new cThread();
+  chai3d::cThread *physicsThread = new chai3d::cThread();
   // Need to make new priority constant for physics thread
-  physicsThread->start(runPhysicsLoop, CTHREAD_PRIORITY_GRAPHICS);
+  physicsThread->start(runPhysicsLoop, chai3d::CTHREAD_PRIORITY_GRAPHICS);
   physicsThreadStarted.store(true);
   std::cout << "Physics thread started!" << std::endl;
 }
@@ -1400,30 +1400,31 @@ void initializePhysicsThread() {
  *  @brief Recomputes which atom pairs are within the threshold of each other and
  *         shows/hides/creates the rendered line connecting each bonded pair.
  */
-void updateBonds(cWorld* world) {
+void updateBonds(chai3d::cWorld* world) {
   if (!renderBonds.load()) {
     for (auto &entry : bondLines) {
       entry.second->setShowEnabled(false);
     }
   } else {
-    set<pair<int, int>> bondedPairs;
+    std::set<std::pair<int, int>> bondedPairs;
     int numAtoms = static_cast<int>(atoms.size());
     for (int i = 0; i < numAtoms; i++) {
       for (int j = i + 1; j < numAtoms; j++) {
         double distance = cDistance(atoms[i]->getLocalPos(), atoms[j]->getLocalPos());
         // Atom pairs closer than this threshold are considered bonded for rendering.
-        // TODO: change BOND_DISTANCE_THRESHHOLD to be 1.2 * (R_A + R_B), where R_A and R_B are
-        // covalent radii of their atoms. 
         if (distance < (1.2 * (atoms[i]->getRadius() + atoms[j]->getRadius()))) {
-          bondedPairs.insert(make_pair(i, j));
+          bondedPairs.insert(std::make_pair(i, j));
+          atoms[i]->bondedAtoms.insert(atoms[j]);
+        } else {
+          atoms[i]->bondedAtoms.erase(atoms[j]);
         }
       }
     }
 
-    for (const pair<int, int> &bondedPair : bondedPairs) {
-      cShapeLine *&line = bondLines[bondedPair];
+    for (const std::pair<int, int> &bondedPair : bondedPairs) {
+      chai3d::cShapeLine *&line = bondLines[bondedPair];
       if (!line) {
-        line = new cShapeLine(cVector3d(0, 0, 0), cVector3d(0, 0, 0));
+        line = new chai3d::cShapeLine(chai3d::cVector3d(0, 0, 0), chai3d::cVector3d(0, 0, 0));
         line->setLineWidth(3);
         line->m_colorPointA.setGrayDim();
         line->m_colorPointB.setGrayDim();
@@ -1442,11 +1443,16 @@ void updateBonds(cWorld* world) {
   }
 }
 
+// TODO: Add polyhedron simplification
+void updatePolyhedronMesh(std::set<std::pair<int, int>> *bondedPairs) {
+  
+}
+
 /**
  * @brief Updates counters based on value (?)
  * TODO: Unsure of the actual purpose of this function. Must find out.
  */
-void updateCounters(cLabel *label, std::atomic<int> &counter) {
+void updateCounters(chai3d::cLabel *label, std::atomic<int> &counter) {
   int value = counter.load();
   if (value == 5000) {
     label->setShowEnabled(true);
@@ -1477,7 +1483,7 @@ void showHelpPanel() {
   // Size and place the panel first. Its height is capped at MAX_HELP_PANEL_HEIGHT, so the rows
   // must be laid out against the PANEL height, not the raw window height, or the bottom rows spill
   // out below the panel on tall windows.
-  double helpPanelHeight = cMin(MAX_HELP_PANEL_HEIGHT, cMax(0.0, panelTop));
+  double helpPanelHeight = chai3d::cMin(MAX_HELP_PANEL_HEIGHT, chai3d::cMax(0.0, panelTop));
   helpPanel->setSize(HELP_PANEL_WIDTH, helpPanelHeight);
   helpPanel->setLocalPos(width - HELP_PANEL_RIGHT_MARGIN, panelTop - helpPanelHeight);
   helpHeader->setLocalPos(width - HELP_HEADER_RIGHT_MARGIN, panelTop - HEADER_RESERVE + HEADER_TOP_OFFSET);
@@ -1514,7 +1520,7 @@ void showNearestNeighbor() {
       if (dist < minDist) minDist = dist;
     }
   }
-  debugLabels[2]->setText("Nearest neighbor: " + cStr(minDist / DIST_SCALE, 5) + " Ang");
+  debugLabels[2]->setText("Nearest neighbor: " + chai3d::cStr(minDist / DIST_SCALE, 5) + " Ang");
 }
 
 /**
@@ -1530,7 +1536,7 @@ void showGreatestForce() {
       maxForceIndex = i;
     }
   }
-  debugLabels[3]->setText("Max force: " + cStr(maxForce, 5) + " (atom " + to_string(maxForceIndex) + ")");
+  debugLabels[3]->setText("Max force: " + chai3d::cStr(maxForce, 5) + " (atom " + std::to_string(maxForceIndex) + ")");
 }
 
 /**
@@ -1538,7 +1544,7 @@ void showGreatestForce() {
  */
 void showAtomDebugLabels() {
   for (int i = 0; i < debugAtomLabels.size(); i++) {
-    cVector3d toAtom = atoms[i]->getLocalPos() - camera->getLocalPos();
+    chai3d::cVector3d toAtom = atoms[i]->getLocalPos() - camera->getLocalPos();
     double depth = toAtom.dot(camera->getLookVector());
     if (depth > 0) {
       double scaleY = (0.5 * height) / tan(0.5 * camera->getFieldViewAngleRad());
@@ -1558,11 +1564,11 @@ void showAtomDebugLabels() {
  */
 void showDebugInfo() {
   // current atom force magnitude
-  debugLabels[0]->setText("Force magnitude: " + cStr(atoms[currentIndex]->getForce().length(), 5));
+  debugLabels[0]->setText("Force magnitude: " + chai3d::cStr(atoms[currentIndex]->getForce().length(), 5));
 
   // current atom position
-  cVector3d pos = atoms[currentIndex]->getLocalPos();
-  debugLabels[1]->setText("Atom pos: (" + cStr(pos.x(), 3) + ", " + cStr(pos.y(), 3) + ", " + cStr(pos.z(), 3) + ")");
+  chai3d::cVector3d pos = atoms[currentIndex]->getLocalPos();
+  debugLabels[1]->setText("Atom pos: (" + chai3d::cStr(pos.x(), 3) + ", " + chai3d::cStr(pos.y(), 3) + ", " + chai3d::cStr(pos.z(), 3) + ")");
   showNearestNeighbor();
   showGreatestForce();
   // position all debug labels
@@ -1590,15 +1596,16 @@ void hideDebugInfo() {
  * @brief Updates all labels
  */
 void updateLabels() {
-  labelRates->setText(cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
-                      cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
+  labelRates->setText(chai3d::cStr(freqCounterGraphics.getFrequency(), 0) + " Hz / " +
+                      chai3d::cStr(freqCounterHaptics.getFrequency(), 0) + " Hz");
   labelRates->setLocalPos((int)(0.5 * (width - labelRates->getWidth())), 15);
   labelRates->setShowEnabled(showDebug);
 
   double x = hapticPosition.get(0);
   double y = hapticPosition.get(1);
   double z = hapticPosition.get(2);
-  hapticPositionLabel->setText("Position: " + cStr(x, 2) + ", " + cStr(y, 2) + ", " + cStr(z, 2));
+  hapticPositionLabel->setText("Position: " 
+      + chai3d::cStr(x, 2) + ", " + chai3d::cStr(y, 2) + ", " + chai3d::cStr(z, 2));
   hapticPositionLabel->setShowEnabled(showDebug);
 
   updateCameraLabel(camera_pos, camera);
@@ -1607,10 +1614,10 @@ void updateLabels() {
   // displayedTemperature is computed on the physics thread (stepSim) from the
   // atoms' actual kinetic energy -- this just displays that measured value,
   // it doesn't re-derive it from the slider's target setpoint.
-  temperatureLabel->setText("Temperature: " + cStr(displayedTemperature.load(), 5) + " K");
+  temperatureLabel->setText("Temperature: " + chai3d::cStr(displayedTemperature.load(), 5) + " K");
 
   // TODO: figure out a way to use a bool instead of a string
-  string trueFalse = freezeAtoms.load() ? "true" : "false";
+  std::string trueFalse = freezeAtoms.load() ? "true" : "false";
   isFrozen->setText("Freeze simulation: " + trueFalse);
   isFrozen->setLocalPos((width - isFrozen->getWidth()) - 5, 15);
   isFrozen->setShowEnabled(showDebug);
@@ -1633,7 +1640,7 @@ void updateLabels() {
 /**
  * @brief Updates all scene objects that depend on the current simulation state.
  */
-void updateGraphics(cWorld* world) {
+void updateGraphics(chai3d::cWorld* world) {
   std::lock_guard<std::recursive_mutex> lock(sceneMutex);
   std::atomic<int> displayedAnchoredCount(0);
   // UPDATE WIDGETS
@@ -1664,7 +1671,7 @@ void updateGraphics(cWorld* world) {
     }
     if (atom->hasNextPos()) {
       auto periodics = atom->getPeriodics();
-      cVector3d atomPos = atom->nextPos();
+      chai3d::cVector3d atomPos = atom->nextPos();
       atom->setLocalPos(atomPos);
       int xLength = periodics.size();
       int yLength = periodics[0].size();
@@ -1675,7 +1682,7 @@ void updateGraphics(cWorld* world) {
       for (int i = startX; i < xLength + startX; i++) {
         for (int j = startY; j < yLength + startY; j++) {
           for (int k = startZ; k < zLength + startZ; k++) {
-            cVector3d periodicPos = atomPos + i * a + j * b + k * c;
+            chai3d::cVector3d periodicPos = atomPos + i * a + j * b + k * c;
             periodics[i - startX][j - startY][k - startZ]->setLocalPos(periodicPos);
           }
         }
@@ -1693,12 +1700,12 @@ void updateGraphics(cWorld* world) {
   
   const bool debugVisible = showDebug;
   const double potentialEnergy = displayedPotentialEnergy.load();
-  LJ_num->setText("Potential Energy: " + cStr(potentialEnergy, 5));
+  LJ_num->setText("Potential Energy: " + chai3d::cStr(potentialEnergy, 5));
   LJ_num->setLocalPos(0, 15, 0);
   LJ_num->setShowEnabled(debugVisible);
 
-  num_anchored->setText(to_string(anchoredCount) + " anchored / " +
-                        to_string(atoms.size()) + " total");
+  num_anchored->setText(std::to_string(anchoredCount) + " anchored / " +
+                        std::to_string(atoms.size()) + " total");
   num_anchored->setLocalPos((width - num_anchored->getWidth()) - 5, 0);
   num_anchored->setShowEnabled(debugVisible);
 
@@ -1710,8 +1717,8 @@ void updateGraphics(cWorld* world) {
   const double RANGE_OFFSET = 25.0;
   if (!global_min_known && global_minimum < scope->getRangeMin()) {
     scope->setRange(scope->getRangeMin() - RANGE_OFFSET, scope->getRangeMax() - RANGE_OFFSET);
-    scope_upper->setText(cStr(scope->getRangeMax()));
-    scope_lower->setText(cStr(scope->getRangeMin()));
+    scope_upper->setText(chai3d::cStr(scope->getRangeMax()));
+    scope_lower->setText(chai3d::cStr(scope->getRangeMin()));
   }
 
     // RENDER SCENE
@@ -1728,7 +1735,7 @@ void updateGraphics(cWorld* world) {
 /**
  * @brief Runs the graphics loop
  */
-void runGraphicsLoop(cWorld* world, GLFWwindow* mainWindow, GLFWwindow* sliderWindow) {
+void runGraphicsLoop(chai3d::cWorld* world, GLFWwindow* mainWindow, GLFWwindow* sliderWindow) {
   framebufferSizeCallback(mainWindow, width, height); // initialize framebuffer size
   // main graphic loop
   while (!glfwWindowShouldClose(mainWindow)) {
@@ -1745,7 +1752,7 @@ void runGraphicsLoop(cWorld* world, GLFWwindow* mainWindow, GLFWwindow* sliderWi
 /**
  * @brief Applies some force to the atom relative to the camera
  */
-void relCamApplyForceToCurrent(cVector3d direction) {
+void relCamApplyForceToCurrent(chai3d::cVector3d direction) {
   std::lock_guard<std::recursive_mutex> lock(sceneMutex);
   chai3d::cVector3d right = camera->getRightVector();
   chai3d::cVector3d up = camera->getUpVector();
@@ -1811,7 +1818,7 @@ int runApplication(int argc, char *argv[]) {
   srand(time(nullptr)); // initialize random seed
   
   // Selects whether the 3D view uses stereo rendering.
-  const chai3d::cStereoMode STEREO_MODE = C_STEREO_DISABLED; 
+  const chai3d::cStereoMode STEREO_MODE = chai3d::C_STEREO_DISABLED; 
 
   // OPEN GL - WINDOW DISPLAY
   configureGLFW(STEREO_MODE);
@@ -1819,7 +1826,7 @@ int runApplication(int argc, char *argv[]) {
   ensureGLEW();
 
   // WORLD - CAMERA - LIGHTING
-  cWorld* world = initializeWorld();
+  chai3d::cWorld* world = initializeWorld();
   initializeCamera(world, STEREO_MODE);
   initializeLight(world);
   
@@ -1829,7 +1836,7 @@ int runApplication(int argc, char *argv[]) {
   if (argc < 2) {
     throw std::runtime_error("Missing haptic mode argument");
   }
-  string hapticModeStr = argv[1];  
+  std::string hapticModeStr = argv[1];  
   if (hapticModeStr == "force" || hapticModeStr == "f") {
     hapticMode = HapticMode::Force;
   } else if (hapticModeStr == "position" || hapticModeStr == "p") {
@@ -1843,7 +1850,7 @@ int runApplication(int argc, char *argv[]) {
   // PBC argument (argv[5]): "on" forces periodic boundaries on in all three
   // directions, "off" forces them off, and "keep" (or omitting the argument)
   // leaves whatever the loaded structure file specified untouched.
-  string pbcMode = "keep";
+  std::string pbcMode = "keep";
   if (argc > 5) {
     pbcMode = argv[5];
     for (char &c : pbcMode) {
@@ -1870,7 +1877,7 @@ int runApplication(int argc, char *argv[]) {
   if (argc > 3) {
     initializeCalculator(argc, argv, aseCell, asePbc);
   } else {
-    cerr << "No potential specified. Defaulting to Lennard-Jones." << endl;
+    std::cerr << "No potential specified. Defaulting to Lennard-Jones." << std::endl;
     calculatorPtr = new ljCalculator();
   }
 
@@ -1932,18 +1939,18 @@ int main(int argc, char *argv[]) {
   try {
     return runApplication(argc, argv);
   } catch (const std::exception &e) {
-    cerr << endl << "Fatal error: " << e.what() << endl;
-    cerr << "(run this binary through launcher/main.py, or pass the haptic "
-            "mode argument yourself - see README.md)" << endl;
-    cerr << "Press Enter to close this window..." << endl;
-    cin.get();
+    std::cerr << std::endl << "Fatal error: " << e.what() << std::endl;
+    std::cerr << "(run this binary through launcher/main.py, or pass the haptic "
+            "mode argument yourself - see README.md)" << std::endl;
+    std::cerr << "Press Enter to close this window..." << std::endl;
+    std::cin.get();
     return 1;
   }
 }
 
 
 bool setLivePotential(const std::string &requested) {
-  string potential = requested;
+  std::string potential = requested;
   for (char &c : potential) {
     c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
   }

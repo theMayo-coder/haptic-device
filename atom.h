@@ -22,10 +22,10 @@ class Atom : public cShapeSphere {
         cShapeLine *velVector; // a rendered line that represents the atom's velocity
         int atomicNumber;
         cColorf color;
-
         void refreshMaterial(chai3d::cShapeSphere *sphere);
 
     public:
+        std::vector<Atom*> bondedAtoms;
         void setPeriodics(int x, int y, int z);
 
         /**

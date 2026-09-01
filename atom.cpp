@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 
 // array of atom stringnames by atomic number
-const string ATOM_STRINGS[119] = { "There is no atomic no. 0!",
+const std::string ATOM_STRINGS[119] = { "There is no atomic no. 0!",
         "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
         "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
         "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd",
@@ -191,7 +191,7 @@ void Atom::setPeriodics(int x, int y, int z) {
     } 
 }
 
-Atom::Atom(double radius, int atomicNum, chai3d::cWorld *world, cTexture2dPtr texture) : chai3d::cShapeSphere(radius) {
+Atom::Atom(double radius, int atomicNum, chai3d::cWorld *world, chai3d::cTexture2dPtr texture) : chai3d::cShapeSphere(radius) {
     anchor = false;
     current = false;
     repeating = false;
@@ -210,7 +210,7 @@ Atom::Atom(double radius, int atomicNum, chai3d::cWorld *world, cTexture2dPtr te
         colorTuple = ATOM_COLORS[0];
     }
 
-    color.set(get<0>(colorTuple)/255, get<1>(colorTuple)/255, get<2>(colorTuple)/255);
+    color.set(std::get<0>(colorTuple)/255, std::get<1>(colorTuple)/255, std::get<2>(colorTuple)/255);
     setUseCulling(true);
     refreshMaterial(this);
     setTexture(texture);
@@ -286,20 +286,20 @@ void Atom::setForce(chai3d::cVector3d newForce) {
     // location as the anchored atom
 }
 
-cVector3d Atom::getPrevForce() const {
+chai3d::cVector3d Atom::getPrevForce() const {
     return prevForce;
 }
 
-cShapeLine* Atom::getVelVector() const { 
+chai3d::cShapeLine* Atom::getVelVector() const { 
     return velVector; 
 }
 
-void Atom::setVelVector(cShapeLine* newVelVector) { 
+void Atom::setVelVector(chai3d::cShapeLine* newVelVector) { 
     velVector = newVelVector;
 }
 
 void Atom::updateForceVector() {
-    cVector3d forceDir = this->getForce();
+    chai3d::cVector3d forceDir = this->getForce();
     forceDir.normalize();
     velVector->m_pointA = getLocalPos() + forceDir * getRadius();
     velVector->m_colorPointA.setBlack();
@@ -309,7 +309,7 @@ void Atom::updateForceVector() {
     velVector->m_pointB = velVector->m_pointA + getForce() * .005;
 }
 
-void Atom::setColor(cColorf color) {
+void Atom::setColor(chai3d::cColorf color) {
     if (!selected) {
         m_material->setColor(color);
         m_material->m_emission.set(0.0f, 0.0f, 0.0f, 1.0f);
@@ -324,7 +324,7 @@ void Atom::setAtomicNumber(int num) {
     atomicNumber = num;
 }
 
-string Atom::getElement() const {
+std::string Atom::getElement() const {
     return ATOM_STRINGS[atomicNumber];
 }
 
@@ -338,7 +338,7 @@ void Atom::addBufferedPos(chai3d::cVector3d pos) {
 }
 
 chai3d::cVector3d Atom::nextPos() {
-    cVector3d result = positionBuffer.front();
+    chai3d::cVector3d result = positionBuffer.front();
     positionBuffer.pop();
     return result;
 }
