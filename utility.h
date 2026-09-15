@@ -29,14 +29,14 @@ void updateCameraLabel(chai3d::cLabel *&camera_pos, chai3d::cCamera *&camera);
 void writeToCon(std::string fileName);
 
 std::string getExecutableDir();
-template <typename Loader> bool loadChaiResource(Loader loader, const string &relativePath) {
-  vector<string> roots;
+template <typename Loader> bool loadChaiResource(Loader loader, const std::string &relativePath) {
+  std::vector<std::string> roots;
   // root resource path
-  string resourceRoot;
+  std::string resourceRoot;
   if (!resourceRoot.empty()) {
     roots.push_back(resourceRoot);
   }
-  string executableDir = getExecutableDir();
+  std::string executableDir = getExecutableDir();
   if (!executableDir.empty()) {
     roots.push_back(executableDir + "/");
     roots.push_back(executableDir + "/../");
@@ -46,8 +46,8 @@ template <typename Loader> bool loadChaiResource(Loader loader, const string &re
   roots.push_back("../");
   roots.push_back("./bin/");
   roots.push_back("../bin/");
-  for (const string &root : roots) {
-    const string candidate = root + relativePath;
+  for (const std::string &root : roots) {
+    const std::string candidate = root + relativePath;
     if (loader(candidate.c_str())) {
       return true;
     }
@@ -83,7 +83,7 @@ void drawCircle(double cx, double cy, double radius, chai3d::cColorf color);
 void drawPill(double xStart, double xEnd, double y, double halfHeight, chai3d::cColorf color);
 
 void framebufferSizeCallback(GLFWwindow *a_window, int a_width, int a_height);
-cVector3d scaledToRadius(const cVector3d &position, double radius);
+chai3d::cVector3d scaledToRadius(const chai3d::cVector3d &position, double radius);
 
 /**
  * @brief Adds a new label to the scene using the default style.

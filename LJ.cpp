@@ -1414,9 +1414,9 @@ void updateBonds(chai3d::cWorld* world) {
         // Atom pairs closer than this threshold are considered bonded for rendering.
         if (distance < (1.2 * (atoms[i]->getRadius() + atoms[j]->getRadius()))) {
           bondedPairs.insert(std::make_pair(i, j));
-          atoms[i]->bondedAtoms.insert(atoms[j]);
+          atoms[i]->getBondedAtoms().insert(atoms[j]);
         } else {
-          atoms[i]->bondedAtoms.erase(atoms[j]);
+          atoms[i]->getBondedAtoms().erase(atoms[j]);
         }
       }
     }
@@ -1443,9 +1443,63 @@ void updateBonds(chai3d::cWorld* world) {
   }
 }
 
+/**
+ * @brief Gets whether all bonded atoms around a central site are strictly more electronegative than
+ *        the central site
+ * @param bonded vector of atoms bonded to the central site
+ * @param center the center site
+ */
+bool isAllElectronegative(Atom* center) {
+  for (Atom* bondedAtom : center->getBondedAtoms()) {
+      if (bondedAtom->getEN() <= center->getEN()) {
+        return false;
+      }
+  }
+  return true;
+}
+
+bool validMesh(chai3d::cVector3d surfaceNormal, chai3d::cVector3d point, Atom* center) {
+  int above;
+  for (Atom* bondedAtom : center->getBondedAtoms()) {
+    double distance = chai3d::cDot(bondedAtom->getLocalPos() - point, surfaceNormal);
+    int atomAbove;
+    if (distance > 0) {
+      atomAbove = 1;
+    } else if (distance < 0) {
+      atomAbove = -1;
+    }
+    if (above == 0) {
+      above = atomAbove;
+    } else {
+      if (above != atomAbove) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // TODO: Add polyhedron simplification
-void updatePolyhedronMesh(std::set<std::pair<int, int>> *bondedPairs) {
-  
+void updatePolyhedronMesh(Atom* atom) {
+  if (atom->getBondedAtoms().size() > 3 && isAllElectronegative(atom)) {
+    for (Atom* a : atom->getBondedAtoms()) {
+      for (Atom* b : atom->getBondedAtoms()) {
+        for (Atom* c : atom->getBondedAtoms()) {
+          if (a != b && a != c && b != c) {
+            chai3d::cVector3d surfaceNormal;
+            surfaceNormal = chai3d::cComputeSurfaceNormal(
+              a->getLocalPos(), 
+              b->getLocalPos(), 
+              c->getLocalPos()
+            );
+            if (validMesh(surfaceNormal, a->getLocalPos(), atom)) {
+              std::cout << "MESH HERE" << std::endl;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

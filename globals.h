@@ -46,7 +46,7 @@ extern int width;
 // current height of window
 extern int height;
 
-extern cScope *scope;
+extern chai3d::cScope *scope;
 
 extern std::atomic<bool> freezeAtoms;
 
@@ -57,11 +57,11 @@ extern std::atomic<bool> renderAtoms;
 extern std::atomic<bool> renderForceVectors;
 extern std::atomic<bool> renderBonds;
 
-extern cLabel *camera_pos;
+extern chai3d::cLabel *camera_pos;
 
-extern cLabel *helpHeader;
+extern chai3d::cLabel *helpHeader;
 
-extern cPanel *helpPanel;
+extern chai3d::cPanel *helpPanel;
 
 extern std::atomic<int> screenshotCounter;
 

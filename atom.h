@@ -3,29 +3,31 @@
 
 #include "chai3d.h"
 #include <queue>
+#include <set>
 
-using namespace std;
-using namespace chai3d;
 
-class Atom : public cShapeSphere {
-    private:
-        bool anchor;
-        bool current;
-        bool repeating;
-        bool selected;
-        cVector3d velocity;
-        cVector3d force;
-        cVector3d prevForce;
-        cVector3d prevPos;
-        std::vector<std::vector<std::vector<chai3d::cShapeSphere*>>> periodics;
-        std::queue<chai3d::cVector3d> positionBuffer; // a position buffer so physics calculator calculate ahead
-        cShapeLine *velVector; // a rendered line that represents the atom's velocity
-        int atomicNumber;
-        cColorf color;
+class Atom : public chai3d::cShapeSphere { 
+    private: 
+        bool anchor; 
+        bool current; 
+        bool repeating; 
+        bool selected; 
+        chai3d::cVector3d velocity; 
+        chai3d::cVector3d force; 
+        chai3d::cVector3d prevForce; 
+        chai3d::cVector3d prevPos; 
+        std::vector<std::vector<std::vector<chai3d::cShapeSphere*>>> periodics; 
+        
+        // Separated line and comment safely
+        std::queue<chai3d::cVector3d> positionBuffer; // a position buffer so physics calculator calculate ahead 
+        std::set<Atom*> bondedAtoms; 
+        
+        chai3d::cShapeLine *velVector; // a rendered line that represents the atom's velocity 
+        int atomicNumber; 
+        chai3d::cColorf color; 
         void refreshMaterial(chai3d::cShapeSphere *sphere);
 
     public:
-        std::vector<Atom*> bondedAtoms;
         void setPeriodics(int x, int y, int z);
 
         /**
@@ -33,7 +35,7 @@ class Atom : public cShapeSphere {
          * @param radius the radius of the atom. Should be based on the covalent radius
          * @param atomicNum the atomic number of the atom
          */
-        Atom(double radius, int atomicNumber, chai3d::cWorld *world, cTexture2dPtr texture);
+        Atom(double radius, int atomicNumber, chai3d::cWorld *world, chai3d::cTexture2dPtr texture);
 
         const std::vector<std::vector<std::vector<chai3d::cShapeSphere*>>>& getPeriodics() const;
 
@@ -89,43 +91,43 @@ class Atom : public cShapeSphere {
          * @brief Gets the velocity of the atom
          * @return the velocity of the atom in world units. One world unit is 50 Å.
          */
-        cVector3d getVelocity() const;
+        chai3d::cVector3d getVelocity() const;
         
         /**
          * @brief Sets the velocity of the atom in world units.
          * @param newVel the velocity of the atom in world units. One world unit is 50 Å.
          */
-        void setVelocity(cVector3d newVel);
+        void setVelocity(chai3d::cVector3d newVel);
 
         /**
          * @brief Gets the force applied to the atom
          * @return the force applied to the atom in eV/Å
          */
-        cVector3d getForce() const;
+        chai3d::cVector3d getForce() const;
 
         /**
          * @brief Sets the force applied to the atom
          * @param newForce the force to apply to the atom in eV/Å
          */
-        void setForce(cVector3d newForce);
+        void setForce(chai3d::cVector3d newForce);
 
         /**
          * @brief Gets the force previous to the current applied force.
          * @return the force previous to the current applied force
          */
-        cVector3d getPrevForce() const;
+        chai3d::cVector3d getPrevForce() const;
 
         /**
          * @brief Gets the velocity vector of the atom as a rendered line
          * @return the velocity vector of the atom as a rendered line
          */
-        cShapeLine *getVelVector() const;
+        chai3d::cShapeLine *getVelVector() const;
 
         /**
          * @brief Sets the rendered velocity vector of the atom
          * @param newVelVector The new rendered velocity vector of the atom
          */
-        void setVelVector(cShapeLine *newVelVector);
+        void setVelVector(chai3d::cShapeLine *newVelVector);
 
         /**
          * @brief Update the atom's rendered velocity vector
@@ -136,7 +138,7 @@ class Atom : public cShapeSphere {
          * @brief Sets the color of the atom
          * @param color The color to set the atom to
          */
-        void setColor(cColorf color);
+        void setColor(chai3d::cColorf color);
 
         /**
          * @brief Gets the atomic number of the atom
@@ -154,7 +156,7 @@ class Atom : public cShapeSphere {
          * @brief Gets the chemical symbol of the atom
          * @return the chemical symbol of the atom
          */
-        string getElement() const;
+        std::string getElement() const;
 
         /**
          * @brief Gets the mass of the atom
@@ -162,6 +164,12 @@ class Atom : public cShapeSphere {
          */
         double getMass() const;
 
+        /**
+         * @brief Gets the electronegativity of the atom
+         * @return the electronegativity of the atom on the Pauling scale
+         */
+        double getEN() const;
+        
         /**
          * @brief Sets the buffer position of the atom
          * @param pos the position to set the buffered pos to
@@ -191,6 +199,12 @@ class Atom : public cShapeSphere {
          * @return the position most recently taken from the buffer
          */
         chai3d::cVector3d getPrevPos() const;
+
+        /**
+         * @brief Returns the set of atoms bonded to the current atom, editable
+         * @return the set of atoms bonded to the current atom, editable
+         */
+        std::set<Atom*>& getBondedAtoms();
 };
 
 #endif  // ATOM_H
