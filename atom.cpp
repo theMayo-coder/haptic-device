@@ -2,11 +2,12 @@
 #include "chai3d.h"
 #include "math.h"
 #include <unordered_map>
+#include <set>
 #include <tuple>
 #include <GLFW/glfw3.h>
 
 // array of atom stringnames by atomic number
-const std::string ATOM_STRINGS[119] = { "There is no atomic no. 0!",
+const static std::string ATOM_STRINGS[119] = { "There is no atomic no. 0!",
         "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
         "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
         "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd",
@@ -18,7 +19,7 @@ const std::string ATOM_STRINGS[119] = { "There is no atomic no. 0!",
 };
 
 // array of atom weights by atomic number
-const double ATOM_WEIGHTS[119] = {
+const static double ATOM_WEIGHTS[119] = {
     0.0, 1.008, 4.003, 7.0, 9.012, 10.81, 12.011, 14.007, 15.999, 18.998, 20.18, 22.99, 24.305,
     26.982, 28.085, 30.974, 32.07, 35.45, 39.9, 39.098, 40.08, 44.956, 47.867, 50.942, 51.996,
     54.938, 55.84, 58.933, 58.693, 63.55, 65.4, 69.723, 72.63, 74.922, 78.97, 79.9, 83.8, 85.468, 
@@ -32,12 +33,22 @@ const double ATOM_WEIGHTS[119] = {
     290.196, 293.205, 294.11, 295.216
 };
 
+const static double ATOM_ELECTRONEGATIVITY[119] = {
+    2.2, -1.0, .98, 1.57, 2.04, 2.55, 3.04, 3.44, 3.98, -1.0, 0.93, 1.31, 1.61, 1.9, 2.19, 2.58,
+    3.16, -1.0, 0.82, 1.00, 1.36, 1.54, 1.63, 1.66, 1.55, 1.83, 1.88, 1.91, 1.9, 1.65, 1.81, 2.01,
+    2.18, 2.55, 2.96, 3.00, 0.82, 0.95, 1.22, 1.33, 1.6, 2.16, 1.9, 2.2, 2.28, 2.2, 1.93, 1.69,
+    1.78, 1.96, 2.05, 2.1, 2.66, 2.6, 0.79, 0.89, 1.1, 1.12, 1.13, 1.14, 1.1, 1.2, 1.17, 1.1, 1.2,
+    1.2, 1.1, 1.22, 1.23, 1.24, 1.25, 1.1, 1.2, 1.27, 1.3, 1.5, 2.36, 1.9, 2.2, 2.2, 2.28, 2.54,
+    2.0, 1.62, 2.33, 2.02, 2.0, 2.2, -1.0, -1.0, 0.9, 1.1, 1.3, 1.5, 1.38, 1.36, 1.28, 1.3, 1.3, 1.3,
+    1.3, 1.3, 1.3, 1.3, 1.3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
 
 // map of atom colors by atomic number, using the standard Jmol/CPK color
 // scheme so elements read in from structure files (e.g. POSCAR) render with
 // their conventional colors instead of falling back to the default magenta
 
-const std::tuple<const GLfloat, const GLfloat, const GLfloat> ATOM_COLORS[110] = {
+const static std::tuple<const GLfloat, const GLfloat, const GLfloat> ATOM_COLORS[110] = {
     {255, 20, 147}, // fallback color; Elements past 110 (Ds) are magenta
     {255, 255, 255},
     {217, 255, 255},
@@ -223,6 +234,10 @@ const std::vector<std::vector<std::vector<chai3d::cShapeSphere*>>>& Atom::getPer
     return periodics;
 }
 
+std::set<Atom*>& Atom::getBondedAtoms() {
+    return bondedAtoms;
+}
+
 bool Atom::isAnchor() const { 
     return anchor; 
 }
@@ -330,6 +345,10 @@ std::string Atom::getElement() const {
 
 double Atom::getMass() const {
     return ATOM_WEIGHTS[atomicNumber];
+}
+
+double Atom::getEN() const {
+    return ATOM_ELECTRONEGATIVITY[atomicNumber];
 }
 
 void Atom::addBufferedPos(chai3d::cVector3d pos) {

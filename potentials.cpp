@@ -148,7 +148,7 @@ namespace {
         std::vector<double> positions;
         positions.reserve(atoms.size() * 3);
         for (const Atom *atom : atoms) {
-            cVector3d pos;
+            chai3d::cVector3d pos;
             if (atom->hasNextPos()) {
                 pos = atom->getLatestPos();
             } else {
@@ -901,16 +901,16 @@ AseStructureData loadAseStructure(const std::string &filename,
 // It's more physically accurate than LJ for bonds that can actually break.
 
 // Returns per-atom force vectors and the total potential energy (appended as the last element).
-vector<vector<double>> morseCalculator::getFandU(vector<Atom *> &atoms)
+std::vector<std::vector<double>> morseCalculator::getFandU(std::vector<Atom *> &atoms)
 {
-    vector<vector<double>> returnVector;
+    std::vector<std::vector<double>> returnVector;
     double potentialEnergy = 0;
     Atom *current;
     for (int i = 0; i < atoms.size(); i++)
     {
-        cVector3d force;
+        chai3d::cVector3d force;
         current = atoms[i];
-        cVector3d pos0 = current->getLocalPos();
+        chai3d::cVector3d pos0 = current->getLocalPos();
         force.zero();
 
         // Sum contributions from every other atom.
@@ -918,10 +918,10 @@ vector<vector<double>> morseCalculator::getFandU(vector<Atom *> &atoms)
         {
             if (i != j)
             {
-                cVector3d pos1 = atoms[j]->getLocalPos();
+                chai3d::cVector3d pos1 = atoms[j]->getLocalPos();
 
                 // Unit vector from j toward i, defines the direction of the force on atom i.
-                cVector3d dir01 = cNormalize(pos0 - pos1);
+                chai3d::cVector3d dir01 = cNormalize(pos0 - pos1);
 
                 double distance = cDistance(pos0, pos1) / distanceScale;
                 potentialEnergy += getMorseEnergy(distance);
@@ -929,12 +929,12 @@ vector<vector<double>> morseCalculator::getFandU(vector<Atom *> &atoms)
                 force.add(appliedForce * dir01);
             }
         }
-        vector<double> pushBack = {force.x(), force.y(), force.z()};
+        std::vector<double> pushBack = {force.x(), force.y(), force.z()};
         returnVector.push_back(pushBack);
     }
     // Each pair (i,j) was counted twice, once from i's perspective and once from j's.
     // Dividing by 2 gives the true total energy.
-    vector<double> potentE = {potentialEnergy / 2};
+    std::vector<double> potentE = {potentialEnergy / 2};
     returnVector.push_back(potentE);
 
     return returnVector;
@@ -964,25 +964,25 @@ double morseCalculator::getMorseForce(double distance)
 // It's fast to compute but less physical than Morse for covalent bonds.
 
 // Returns per-atom force vectors and the total potential energy (appended as the last element).
-vector<vector<double>> ljCalculator::getFandU(vector<Atom *> &atoms)
+std::vector<std::vector<double>> ljCalculator::getFandU(std::vector<Atom *> &atoms)
 {
-    vector<vector<double>> returnVector;
+    std::vector<std::vector<double>> returnVector;
     double potentialEnergy = 0;
     Atom *current;
     for (int i = 0; i < atoms.size(); i++)
     {
-        cVector3d force;
+        chai3d::cVector3d force;
         current = atoms[i];
-        cVector3d pos0 = current->getLocalPos();
+        chai3d::cVector3d pos0 = current->getLocalPos();
         force.zero();
 
         for (int j = 0; j < atoms.size(); j++)
         {
             if (i != j)
             {
-                cVector3d pos1 = atoms[j]->getLocalPos();
+                chai3d::cVector3d pos1 = atoms[j]->getLocalPos();
 
-                cVector3d dir01 = cNormalize(pos0 - pos1);
+                chai3d::cVector3d dir01 = cNormalize(pos0 - pos1);
 
                 double distance = cDistance(pos0, pos1) / distanceScale;
                 potentialEnergy += getLennardJonesEnergy(distance);
@@ -990,11 +990,11 @@ vector<vector<double>> ljCalculator::getFandU(vector<Atom *> &atoms)
                 force.add(appliedForce * dir01);
             }
         }
-        vector<double> pushBack = {force.x(), force.y(), force.z()};
+        std::vector<double> pushBack = {force.x(), force.y(), force.z()};
         returnVector.push_back(pushBack);
     }
     // Divide by 2 to correct for double-counting each pair.
-    vector<double> potentE = {potentialEnergy / 2};
+    std::vector<double> potentE = {potentialEnergy / 2};
     returnVector.push_back(potentE);
 
     return returnVector;

@@ -17,15 +17,15 @@ Atom *selectedAtom; // a pointer to the selected atom
 
 // offset between the position of the mmouse click on the object and the object reference frame
 // location.
-cVector3d selectedAtomOffset;
+chai3d::cVector3d selectedAtomOffset;
 
-cVector3d selectedPoint; // position of mouse click.
+chai3d::cVector3d selectedPoint; // position of mouse click.
 
 double selectionStartX;
 double selectionStartY;
 double selectionCurrentX;
 double selectionCurrentY;
-cShapeLine *selectionBoxLines[4] = {nullptr, nullptr, nullptr, nullptr};
+chai3d::cShapeLine *selectionBoxLines[4] = {nullptr, nullptr, nullptr, nullptr};
 
 /**
  * @brief Scales a window coordinate into a CHAI3D compatible framebuffer/pixel coordinate.
@@ -59,8 +59,8 @@ static void scaleCursorToPixels(GLFWwindow *window, double &a_x, double &a_y) {
 static void ensureSelectionBoxLines() {
   for (int i = 0; i < 4; i++) {
     if (selectionBoxLines[i] == nullptr) {
-      selectionBoxLines[i] = new cShapeLine(cVector3d(0, 0, 0),
-                                            cVector3d(0, 0, 0));
+      selectionBoxLines[i] = new chai3d::cShapeLine(chai3d::cVector3d(0, 0, 0),
+                                            chai3d::cVector3d(0, 0, 0));
       selectionBoxLines[i]->setLineWidth(2);
       selectionBoxLines[i]->m_colorPointA.setYellowGold();
       selectionBoxLines[i]->m_colorPointB.setYellowGold();
@@ -90,14 +90,14 @@ static void updateSelectionBoxLines() {
   const double bottom = std::min(selectionStartY, selectionCurrentY);
   const double top = std::max(selectionStartY, selectionCurrentY);
 
-  selectionBoxLines[0]->m_pointA = cVector3d(left, bottom, 0);
-  selectionBoxLines[0]->m_pointB = cVector3d(right, bottom, 0);
-  selectionBoxLines[1]->m_pointA = cVector3d(right, bottom, 0);
-  selectionBoxLines[1]->m_pointB = cVector3d(right, top, 0);
-  selectionBoxLines[2]->m_pointA = cVector3d(right, top, 0);
-  selectionBoxLines[2]->m_pointB = cVector3d(left, top, 0);
-  selectionBoxLines[3]->m_pointA = cVector3d(left, top, 0);
-  selectionBoxLines[3]->m_pointB = cVector3d(left, bottom, 0);
+  selectionBoxLines[0]->m_pointA = chai3d::cVector3d(left, bottom, 0);
+  selectionBoxLines[0]->m_pointB = chai3d::cVector3d(right, bottom, 0);
+  selectionBoxLines[1]->m_pointA = chai3d::cVector3d(right, bottom, 0);
+  selectionBoxLines[1]->m_pointB = chai3d::cVector3d(right, top, 0);
+  selectionBoxLines[2]->m_pointA = chai3d::cVector3d(right, top, 0);
+  selectionBoxLines[2]->m_pointB = chai3d::cVector3d(left, top, 0);
+  selectionBoxLines[3]->m_pointA = chai3d::cVector3d(left, top, 0);
+  selectionBoxLines[3]->m_pointB = chai3d::cVector3d(left, bottom, 0);
 }
 
 /**
@@ -108,8 +108,8 @@ static void updateSelectionBoxLines() {
  * @return true if projection succeeded, false if projection is not possible
  */
 static bool projectAtomToScreen(Atom *atom, double &screenX, double &screenY) {
-  cVector3d atomPos = atom->getLocalPos();
-  cVector3d toAtom = atomPos - camera->getLocalPos();
+  chai3d::cVector3d atomPos = atom->getLocalPos();
+  chai3d::cVector3d toAtom = atomPos - camera->getLocalPos();
   double depth = toAtom.dot(camera->getLookVector());
   if (depth <= 0.0) {
     return false;
@@ -189,17 +189,17 @@ void unanchorAtoms() {
  */
 void saveScreenshot() {
   std::lock_guard<std::recursive_mutex> lock(sceneMutex);
-  cImagePtr image = cImage::create();
+  chai3d::cImagePtr image = chai3d::cImage::create();
   scope->setShowEnabled(false);
   camera->renderView(width, height);
   camera->copyImageBuffer(image);
   scope->setShowEnabled(true);
   int index = 0;
-  string filename_stem = "lj" + to_string(atoms.size()) + "_";
-  while (fileExists(filename_stem + to_string(index) + ".png")) {
+  std::string filename_stem = "lj" + std::to_string(atoms.size()) + "_";
+  while (fileExists(filename_stem + std::to_string(index) + ".png")) {
     index++;
   }
-  image->saveToFile(filename_stem + to_string(index) + ".png");
+  image->saveToFile(filename_stem + std::to_string(index) + ".png");
   screenshotCounter = 5000;
 }
 
@@ -210,8 +210,8 @@ void saveScreenshot() {
  */
 void saveConFile() {
   std::lock_guard<std::recursive_mutex> lock(sceneMutex);
-  ofstream writeFile;
-  string dir1 = "./log/";
+  std::ofstream writeFile;
+  std::string dir1 = "./log/";
   struct stat buffer;
   if (stat(dir1.c_str(), &buffer) != 0) {
     char cstr[dir1.size() + 1];
@@ -223,20 +223,20 @@ void saveConFile() {
   int year = 1900 + ltm->tm_year;
   int month = 1 + ltm->tm_mon;
   int day = ltm->tm_mday;
-  string date = to_string(month) + "-" + to_string(day) + "-" + to_string(year);
-  string dir2 = dir1 + date + "/";
+  std::string date = std::to_string(month) + "-" + std::to_string(day) + "-" + std::to_string(year);
+  std::string dir2 = dir1 + date + "/";
   if (stat(dir2.c_str(), &buffer) != 0) {
     char cstr[dir2.size() + 1];
     strcpy(cstr, dir2.c_str());
     mkdir(cstr, 0777);
   }
   int index = 0;
-  while (fileExists(dir2 + "atoms" + to_string(index) + ".con")) {
+  while (fileExists(dir2 + "atoms" + std::to_string(index) + ".con")) {
     index++;
   }
   writeConCounter = 5000;
-  writeToCon(dir2 + "atoms" + to_string(index) + ".con");
-  cout << "LOGGED AT " + date + " atoms" + to_string(index) + ".con" << endl;
+  writeToCon(dir2 + "atoms" + std::to_string(index) + ".con");
+  std::cout << "LOGGED AT " + date + " atoms" + std::to_string(index) + ".con" << std::endl;
 }
 
 /**
@@ -360,8 +360,8 @@ void keyCallback(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, 
     relCamApplyForceToCurrent(KEYBOARD_MOVE * chai3d::cVector3d(0, 0, -1));
   } else if (a_key == GLFW_KEY_C) {  // save atoms to con file
     std::lock_guard<std::recursive_mutex> lock(sceneMutex);
-    ofstream writeFile;
-    string dir1 = "./log/";
+    std::ofstream writeFile;
+    std::string dir1 = "./log/";
     struct stat buffer;
     if (stat(dir1.c_str(), &buffer) != 0) { // Check if log directory exists
       char cstr[dir1.size() + 1];
@@ -375,8 +375,8 @@ void keyCallback(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, 
     int year = 1900 + ltm -> tm_year;
     int month = 1 + ltm -> tm_mon;
     int day = ltm -> tm_mday;
-    string date = to_string(month) + "-" + to_string(day) + "-" + to_string(year);
-    string dir2 = dir1 + date + "/";
+    std::string date = std::to_string(month) + "-" + std::to_string(day) + "-" + std::to_string(year);
+    std::string dir2 = dir1 + date + "/";
     if (stat(dir2.c_str(), &buffer) != 0) { // Check if date directory exists
       char cstr[dir2.size() + 1];
       strcpy(cstr, dir2.c_str());
@@ -384,12 +384,12 @@ void keyCallback(GLFWwindow *a_window, int a_key, int a_scancode, int a_action, 
     }
     // Prevent overwriting .con files
     int index = 0;
-    while (fileExists(dir2 + "atoms" + to_string(index) + ".con")) {
+    while (fileExists(dir2 + "atoms" + std::to_string(index) + ".con")) {
       index++;
     }
     writeConCounter = 5000;
-    writeToCon(dir2 + "atoms" + to_string(index) + ".con");
-    cout << "LOGGED AT " + date + " atoms" + to_string(index) + ".con" << endl;
+    writeToCon(dir2 + "atoms" + std::to_string(index) + ".con");
+    std::cout << "LOGGED AT " + date + " atoms" + std::to_string(index) + ".con" << std::endl;
   } else if (a_key == GLFW_KEY_A) {
     // anchor all atoms while maintaining control
     anchorAllAtoms();
@@ -446,14 +446,14 @@ void mouseMotionCallback(GLFWwindow *a_window, double a_posX, double a_posY) {
       (selectedAtom->isAnchor())) {
     // get the vector that goes from the camera to the selected point (mouse
     // click)
-    cVector3d vCameraObject = selectedPoint - camera->getLocalPos();
+    chai3d::cVector3d vCameraObject = selectedPoint - camera->getLocalPos();
 
     // get the vector that point in the direction of the camera. ("where the
     // camera is looking at")
-    cVector3d vCameraLookAt = camera->getLookVector();
+    chai3d::cVector3d vCameraLookAt = camera->getLookVector();
 
     // compute the angle between both vectors
-    double angle = cAngle(vCameraObject, vCameraLookAt);
+    double angle = chai3d::cAngle(vCameraObject, vCameraLookAt);
 
     // compute the distance between the camera and the plane that intersects the
     // object and which is parallel to the camera plane
@@ -470,13 +470,13 @@ void mouseMotionCallback(GLFWwindow *a_window, double a_posX, double a_posY) {
     double posRelY = factor * ((height - posY) - (0.5 * height));
 
     // compute the new position in world coordinates
-    cVector3d pos = camera->getLocalPos() +
+    chai3d::cVector3d pos = camera->getLocalPos() +
     distanceToObjectPlane * camera->getLookVector() +
     posRelX * camera->getRightVector() +
     posRelY * camera->getUpVector();
 
     // compute position of object by taking in account offset
-    cVector3d posObject = pos - selectedAtomOffset;
+    chai3d::cVector3d posObject = pos - selectedAtomOffset;
 
     // apply new position to object
     selectedAtom->setLocalPos(posObject);
@@ -497,15 +497,15 @@ void mouseButtonCallback(GLFWwindow *a_window, int a_button, int a_action,
     double x, y;
 
     // detect for any collision between mouse and scene
-    cCollisionRecorder recorder;
-    cCollisionSettings settings;
+    chai3d::cCollisionRecorder recorder;
+    chai3d::cCollisionSettings settings;
     if (a_button == GLFW_MOUSE_BUTTON_LEFT && a_action == GLFW_PRESS) {
         glfwGetCursorPos(a_window, &x, &y);
         scaleCursorToPixels(a_window, x, y); // window points -> framebuffer pixels
         bool hit =
         camera->selectWorld(x, (height - y), width, height, recorder, settings);
         if (hit) {
-            cGenericObject *selected = recorder.m_nearestCollision.m_object;
+            chai3d::cGenericObject *selected = recorder.m_nearestCollision.m_object;
             selectedAtom = (Atom *)selected;
             if (a_mods & GLFW_MOD_SHIFT) {
                 selectedAtom->setSelected(true);
@@ -533,7 +533,7 @@ void mouseButtonCallback(GLFWwindow *a_window, int a_button, int a_action,
         camera->selectWorld(x, (height - y), width, height, recorder, settings);
         if (hit) {
             // retrieve Atom selected by mouse
-            cGenericObject *selected = recorder.m_nearestCollision.m_object;
+            chai3d::cGenericObject *selected = recorder.m_nearestCollision.m_object;
             selectedAtom = (Atom *)selected;
 
             // Toggle anchor status and color

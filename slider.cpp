@@ -261,7 +261,7 @@ GLFWwindow* initializeSliderWindow(GLFWwindow* mainWindow) {
  * @param y the y-pos of the text
  */
 void drawSliderText(const std::string &text, double x, double y) {
-    chai3d::cFontPtr SLIDER_FONT = NEW_CFONT_CALIBRI_20();
+    chai3d::cFontPtr SLIDER_FONT = chai3d::NEW_CFONT_CALIBRI_20();
     if (SLIDER_FONT) {
         chai3d::cRenderOptions options;
         options.m_camera = nullptr;
@@ -282,7 +282,7 @@ void drawSliderText(const std::string &text, double x, double y) {
         glPushMatrix();
         glTranslated(x, y, 0.0);
         glScaled(1.0, -1.0, 1.0);
-        SLIDER_FONT->renderText(text, cColorf(0.05f, 0.05f, 0.05f), 1.0, 1.0, 1.0, options);
+        SLIDER_FONT->renderText(text, chai3d::cColorf(0.05f, 0.05f, 0.05f), 1.0, 1.0, 1.0, options);
         glPopMatrix();
     }
 }
