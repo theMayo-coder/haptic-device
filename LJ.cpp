@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include <array>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -114,7 +115,9 @@ std::atomic<double> returnDelaySeconds(2.5);
 // worn devices turn down feedback strength to reduce wear, without touchingctedPoint
 // the underlying simulation's spring/damping constants.
 std::atomic<double> hapticForceScale(1.0);
+std::atomic<double> selectedAtomsMaxForce(10.0);
 std::atomic<double> maxForceOutput(10.0);
+std::atomic<bool> toggleMomentum(false);
 
 std::atomic<int> repeatX(1);
 std::atomic<int> repeatY(1);
@@ -1217,17 +1220,22 @@ chai3d::cVector3d forceModeUpdateSelectedGroup(const std::vector<Atom*> &selecte
 
   for (Atom *atom : selected) {
     if (!atom->isAnchor()) {
+      if(toggleMomentum) {
+        atom->setVelocity(chai3d::cVector3d(0.0, 0.0, 0.0));
+      }
       chai3d::cVector3d currentPosition = atom->getLatestPos();
       chai3d::cVector3d previousPosition = atom->getPrevPos();
       chai3d::cVector3d targetPosition = position + selectedOffsets[atom];
       chai3d::cVector3d hapticForce = (targetPosition - currentPosition) * K_HAPTIC_SPRING -
                               atom->getVelocity() * K_HAPTIC_DAMPER;
-      const double MAX_HAPTIC_ATOM_FORCE = 100.0; 
-      atom->setForce(atom->getForce() + clampVectorMagnitude(hapticForce, MAX_HAPTIC_ATOM_FORCE));
+      const double MAX_HAPTIC_ATOM_FORCE = selectedAtomsMaxForce.load();
+      chai3d::cVector3d appliedForce = clampVectorMagnitude(hapticForce, MAX_HAPTIC_ATOM_FORCE);
+
+      
+      atom->setForce(atom->getForce() + appliedForce);
       chai3d::cVector3d newPosition = getNewAtomPosition(atom, timeInterval);
       atom->addBufferedPos(applyBoundaryConditions(newPosition, aseCell, asePbc));
     }
-    
   }
   // return (current->getLatestPos() - position) * K_HAPTIC - hapticDevice->getLinearVelocity * K_HAPTIC_DAMP
   return averageSimulationForce;
@@ -1414,9 +1422,15 @@ void updateBonds(chai3d::cWorld* world) {
         // Atom pairs closer than this threshold are considered bonded for rendering.
         if (distance < (1.2 * (atoms[i]->getRadius() + atoms[j]->getRadius()))) {
           bondedPairs.insert(std::make_pair(i, j));
-          atoms[i]->bondedAtoms.insert(atoms[j]);
+          if (std::find(atoms[i]->bondedAtoms.begin(), atoms[i]->bondedAtoms.end(), atoms[j]) ==
+              atoms[i]->bondedAtoms.end()) {
+            atoms[i]->bondedAtoms.push_back(atoms[j]);
+          }
         } else {
-          atoms[i]->bondedAtoms.erase(atoms[j]);
+          auto bondedAtom = std::find(atoms[i]->bondedAtoms.begin(), atoms[i]->bondedAtoms.end(), atoms[j]);
+          if (bondedAtom != atoms[i]->bondedAtoms.end()) {
+            atoms[i]->bondedAtoms.erase(bondedAtom);
+          }
         }
       }
     }
@@ -2009,6 +2023,18 @@ bool setLiveReturnDelay(double value) {
   return true;
 }
 
+bool setLiveForceSelectedAtoms(double value) {
+  if (!std::isfinite(value) || value < MIN_MAX_FORCE_OUTPUT_ATOM || value > MAX_MAX_FORCE_OUTPUT_ATOM) {
+    return false;
+  }
+  selectedAtomsMaxForce.store(value);
+  return true;
+}
+
+void turnOffMomentum(void) {
+  toggleMomentum.store(true);
+}
+
 bool setLiveForceScale(double value) {
   if (!std::isfinite(value) || value < MIN_FORCE_SCALE || value > MAX_FORCE_SCALE) {
     return false;
@@ -2018,7 +2044,7 @@ bool setLiveForceScale(double value) {
 }
 
 bool setLiveMaxOutput(double value) {
-  if (!std::isfinite(value) || value < MIN_MAX_FORCE_OUTPUT || value < MAX_MAX_FORCE_OUTPUT) {
+  if (!std::isfinite(value) || value < MIN_MAX_FORCE_OUTPUT || value > MAX_MAX_FORCE_OUTPUT) {
     return false;
   }
   maxForceOutput.store(value);

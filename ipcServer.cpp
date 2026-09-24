@@ -207,6 +207,18 @@ string handleCommand(const string &line) {
         return "ERR return_delay must be a valid number";
       }
       return "OK";
+    } else if (key == "max_force_selected_atoms") {
+      try {
+        size_t consumed = 0;
+        double parsed = stod(value, &consumed);
+        if (consumed != value.size() || !setLiveForceSelectedAtoms(parsed)) {
+          return "ERR max_force_selected_atoms must be a number between " +
+                 to_string(MIN_MAX_FORCE_OUTPUT_ATOM) + " and " + to_string(MAX_MAX_FORCE_OUTPUT_ATOM);
+        }
+      } catch (const exception &) {
+        return "ERR max_force_selected_atoms must be a valid number";
+      }
+      return "OK";
     } else if (key == "force_scale") {
       try {
         size_t consumed = 0;
@@ -268,6 +280,9 @@ string handleCommand(const string &line) {
       return "OK";
     }
     return "ERR unknown setting '" + key + "'";
+  } else if(command == "toggle_momentum") {
+    turnOffMomentum();
+    return "OK";
   } else if (command == "anchor_all") {
     anchorAllAtoms();
     return "OK";

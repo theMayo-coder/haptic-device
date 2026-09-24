@@ -132,9 +132,16 @@ constexpr double MAX_FORCE_SCALE = 1.0;
 
 constexpr double MIN_MAX_FORCE_OUTPUT = 0.0;
 constexpr double MAX_MAX_FORCE_OUTPUT = 10.0;
+
+constexpr double MIN_MAX_FORCE_OUTPUT_ATOM = 0.0;
+constexpr double MAX_MAX_FORCE_OUTPUT_ATOM = 10.0;
+
 // validated setter for hapticForceScale, same fail-closed contract as setLiveTimeStep
 bool setLiveForceScale(double value);
 bool setLiveMaxOutput(double value);
+
+//validated setter for maxiumum force on selected atoms
+bool setLiveForceSelectedAtoms(double value);
 
 // advance to the next non-anchored atom / next preset camera angle
 void switchCurrentAtom();

@@ -111,6 +111,9 @@ MAX_FORCE_SCALE = 1.0
 MIN_MAX_FORCE_OUTPUT = 0.0
 MAX_MAX_FORCE_OUTPUT = 10.0
 
+MIN_MAX_FORCE_OUTPUT_ATOM = 0.0
+MAX_MAX_FORCE_OUTPUT_ATOM = 10.0
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -439,6 +442,20 @@ class MainWindow(QMainWindow):
         )
         form.addRow("Max force render (N)", self.max_force_output)
 
+        self.max_force_atoms = QDoubleSpinBox()
+        self.max_force_atoms.setDecimals(1)
+        self.max_force_atoms.setRange(MIN_MAX_FORCE_OUTPUT_ATOM, MAX_MAX_FORCE_OUTPUT_ATOM)
+        self.max_force_atoms.setSingleStep(0.1)
+        self.max_force_atoms.setValue(8.0)
+        self.max_force_atoms.setToolTip(
+            "Maximum amount of force that will be applied on selected atoms."
+        )
+        form.addRow("Max selected atoms force (N)", self.max_force_atoms)
+
+        button_momentum = QPushButton("Toggle")
+        form.addRow("Toggle Momentum", button_momentum)
+        button_momentum.clicked.connect(self._handle_toggle_momentum_button)
+
         self.k_return_spin = QDoubleSpinBox()
         self.k_return_spin.setDecimals(2)
         self.k_return_spin.setRange(MIN_K_RETURN, MAX_K_RETURN)
@@ -470,9 +487,13 @@ class MainWindow(QMainWindow):
     def _apply_haptic_tuning(self):
         self.ipc.send(f"set force_scale {self.force_scale_spin.value():.2f}")
         self.ipc.send(f"set max_force {self.max_force_output.value():.2f}")
+        self.ipc.send(f"set max_force_selected_atoms {self.max_force_atoms.value():.1f}")
         self.ipc.send(f"set k_return {self.k_return_spin.value():.2f}")
         self.ipc.send(f"set k_dampen {self.k_dampen_spin.value():.2f}")
         self.ipc.send(f"set return_delay {self.return_delay_spin.value():.2f}")
+
+    def _handle_toggle_momentum_button(self):
+        self.ipc.send(f"toggle_momentum")
 
     def _update_atom_source_enabled(self):
         use_count = self.atom_count_radio.isChecked()
